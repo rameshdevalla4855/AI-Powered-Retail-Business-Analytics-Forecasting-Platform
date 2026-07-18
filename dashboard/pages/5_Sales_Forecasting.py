@@ -13,7 +13,6 @@ from dashboard.components.tables import show_table
 from dashboard.utils import apply_filters, get_dashboard_data, get_forecasting_model
 from src.forecasting import FEATURE_COLUMNS, predict_sales
 
-st.set_page_config(page_title="Sales Forecasting", page_icon="🔮", layout="wide")
 show_sidebar()
 
 st.title("🔮 Sales Forecasting")
@@ -56,6 +55,7 @@ if submitted:
         "delivery_days": delivery_days,
         "delivery_delay_days": delay_days,
     }])
+    sample_df = sample_df[[*FEATURE_COLUMNS]]
     prediction = predict_sales(model, sample_df)[0]
     st.success(f"Predicted Revenue: ${prediction:,.2f}")
 

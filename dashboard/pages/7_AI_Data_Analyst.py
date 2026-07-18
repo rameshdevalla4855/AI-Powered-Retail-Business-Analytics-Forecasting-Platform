@@ -2,21 +2,26 @@
 
 from __future__ import annotations
 
-import pandas as pd
 import streamlit as st
 
+from ai.analytics_router import AnalyticsRouter
+from ai.business_rules import BusinessRules
+from ai.chart_generator import ChartGenerator
+from ai.conversation_memory import ConversationMemory
+from ai.insight_generator import InsightGenerator
+from ai.intent_classifier import IntentClassifier
+from ai.llm_interface import LLMInterface
+from ai.query_parser import QueryParser
+from ai.report_generator import ReportGenerator
 from dashboard.components.cards import metric_row
-from dashboard.components.charts import bar_chart, line_chart, pie_chart
 from dashboard.components.sidebar import show_sidebar
 from dashboard.components.tables import show_table
 from dashboard.utils import apply_filters, get_dashboard_data, get_kpi_summary
-from src.analytics import monthly_sales, payment_analysis, top_products, top_sellers
 
-st.set_page_config(page_title="AI Data Analyst", page_icon="🤖", layout="wide")
 show_sidebar()
 
 st.title("🤖 AI Data Analyst")
-st.caption("Ask simple business questions and get charts, KPIs, and tables")
+st.caption("Ask business questions in plain English and receive analytics, charts, insights, and reports")
 
 try:
     df = get_dashboard_data()
@@ -50,26 +55,49 @@ metric_row([
 
 st.markdown("---")
 
-text = query.lower()
-if "monthly" in text and "sales" in text:
-    result = monthly_sales(filtered)
-    st.plotly_chart(line_chart(result, "purchase_month", "payment_value", "Monthly Sales"), use_container_width=True)
-    show_table(result, "Monthly Sales")
-elif "top products" in text:
-    result = top_products(filtered, top_n=10)
-    st.plotly_chart(bar_chart(result.rename(columns={"payment_value": "Revenue"}), "product_id", "Revenue", "Top Products"), use_container_width=True)
-    show_table(result, "Top Products")
-elif "revenue by state" in text:
-    result = filtered.groupby("customer_state")["payment_value"].sum().reset_index().sort_values("payment_value", ascending=False)
-    st.plotly_chart(bar_chart(result, "customer_state", "payment_value", "Revenue by State"), use_container_width=True)
-    show_table(result, "Revenue by State")
-elif "payment" in text:
-    result = payment_analysis(filtered)
-    st.plotly_chart(pie_chart(result, "payment_type", "Revenue", "Payment Distribution"), use_container_width=True)
-    show_table(result, "Payment Analysis")
-elif "best customers" in text:
-    result = filtered.groupby("customer_id")["payment_value"].sum().reset_index().sort_values("payment_value", ascending=False).head(10)
-    st.plotly_chart(bar_chart(result, "customer_id", "payment_value", "Best Customers"), use_container_width=True)
-    show_table(result, "Best Customers")
-else:
-    st.info("Try one of these prompts: 'Show monthly sales', 'Top products', 'Revenue by state', 'Payment distribution', or 'Best customers'.")
+classifier = IntentClassifier()
+router = AnalyticsRouter()
+chart_generator = ChartGenerator()
+insight_generator = InsightGenerator()
+business_rules = BusinessRules()
+query_parser = QueryParser()
+report_generator = ReportGenerator()
+memory = ConversationMemory()
+llm = LLMInterface()
+
+intent = classifier.classify(query)
+parsed_query = query_parser.parse(query)
+result, chart_type, title = router.route(filtered, intent)
+fig = chart_generator.create(result, chart_type, title)
+insight = insight_generator.generate(result, intent)
+recommendation = business_rules.recommend(intent)
+response_text = f"Intent: {intent}\n\n{llm.generate(query)}"
+
+memory.add(query, response_text)
+
+st.subheader(title)
+st.markdown("### Summary")
+st.write(f"This analysis focuses on {intent.replace('_', ' ')} and uses the current dataset filters.")
+st.markdown("### KPI")
+st.write({"Revenue": round(float(result["Revenue"].sum()) if "Revenue" in result.columns else float(filtered["payment_value"].sum()), 2)})
+st.markdown("### Table")
+show_table(result, title)
+st.markdown("### Plotly Chart")
+st.plotly_chart(fig, use_container_width=True)
+st.markdown("### Business Insight")
+st.info(insight)
+st.markdown("### Recommendation")
+st.success(recommendation)
+
+st.markdown("---")
+
+with st.expander("Recent queries"):
+    for item in memory.recent(5):
+        st.write(f"- {item['query']}")
+
+csv_data = report_generator.to_csv(result)
+excel_data = report_generator.to_excel(result)
+
+st.download_button("Download CSV", csv_data, file_name="ai_analysis.csv", mime="text/csv")
+st.download_button("Download Excel", excel_data, file_name="ai_analysis.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+

@@ -12,7 +12,6 @@ from dashboard.components.sidebar import show_sidebar
 from dashboard.components.tables import show_table
 from dashboard.utils import apply_filters, get_dashboard_data, get_kpi_summary
 
-st.set_page_config(page_title="Customer Analytics", page_icon="👥", layout="wide")
 show_sidebar()
 
 st.title("👥 Customer Analytics")

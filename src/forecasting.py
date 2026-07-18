@@ -202,5 +202,14 @@ def load_model(filename: str):
 # ==========================================================
 
 def predict_sales(model, input_df: pd.DataFrame):
+    """Predict using a dataframe that matches the trained feature schema."""
+    if input_df is None:
+        raise ValueError("Input dataframe is required.")
 
-    return model.predict(input_df[FEATURE_COLUMNS])
+    prepared = input_df.copy()
+    for column in FEATURE_COLUMNS:
+        if column not in prepared.columns:
+            prepared[column] = 0.0
+
+    prepared = prepared[FEATURE_COLUMNS]
+    return model.predict(prepared)

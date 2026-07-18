@@ -6,7 +6,6 @@ import streamlit as st
 
 from dashboard.components.sidebar import show_sidebar
 
-st.set_page_config(page_title="Project Insights", page_icon="💡", layout="wide")
 show_sidebar()
 
 st.title("💡 Project Insights")

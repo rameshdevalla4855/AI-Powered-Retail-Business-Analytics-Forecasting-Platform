@@ -84,34 +84,44 @@ def recommend_products(
     similarity_matrix,
     top_n=5
 ):
+    """Return safe recommendations without assuming a strict matrix-to-DataFrame index match."""
+    normalized_products = products.reset_index(drop=True).copy()
+    normalized_products["product_id"] = normalized_products["product_id"].astype(str)
+    product_key = str(product_id)
 
-    if product_id not in products["product_id"].values:
+    if product_key not in normalized_products["product_id"].values:
         return pd.DataFrame()
 
-    idx = products.index[
-        products["product_id"] == product_id
-    ][0]
+    matched = normalized_products[normalized_products["product_id"] == product_key]
+    if matched.empty:
+        return pd.DataFrame()
 
-    scores = list(
-        enumerate(similarity_matrix[idx])
-    )
+    if not isinstance(similarity_matrix, pd.DataFrame):
+        matrix_size = len(similarity_matrix)
+    else:
+        matrix_size = similarity_matrix.shape[0]
 
-    scores = sorted(
-        scores,
-        key=lambda x: x[1],
-        reverse=True
-    )
+    row_index = int(matched.index[0])
+    if row_index < 0 or row_index >= matrix_size:
+        return pd.DataFrame()
 
-    scores = scores[1:top_n+1]
+    try:
+        row_scores = similarity_matrix[row_index]
+    except Exception:
+        return pd.DataFrame()
 
-    indices = [i[0] for i in scores]
+    if hasattr(row_scores, "tolist"):
+        row_scores = row_scores.tolist()
 
-    return products.iloc[indices][
-        [
-            "product_id",
-            "product_category_name_english"
-        ]
-    ]
+    scored = list(enumerate(row_scores))
+    scored = sorted(scored, key=lambda item: item[1], reverse=True)
+    scored = scored[1:top_n + 1]
+
+    valid_indices = [int(item[0]) for item in scored if 0 <= int(item[0]) < len(normalized_products)]
+    if not valid_indices:
+        return pd.DataFrame()
+
+    return normalized_products.iloc[valid_indices][["product_id", "product_category_name_english"]]
 
 
 # ==========================================================

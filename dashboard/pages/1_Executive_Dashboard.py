@@ -21,7 +21,6 @@ from src.analytics import (
     top_sellers,
 )
 
-st.set_page_config(page_title="Executive Dashboard", page_icon="📊", layout="wide")
 show_sidebar()
 
 st.title("📊 Executive Dashboard")

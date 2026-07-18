@@ -10,7 +10,6 @@ from dashboard.components.tables import show_table
 from dashboard.utils import get_dashboard_data, get_recommendation_assets
 from src.recommendation import recommend_products
 
-st.set_page_config(page_title="Product Recommendation", page_icon="🛍", layout="wide")
 show_sidebar()
 
 st.title("🛍 Product Recommendation")

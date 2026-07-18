@@ -13,7 +13,6 @@ from dashboard.components.tables import show_table
 from dashboard.utils import apply_filters, get_dashboard_data, get_segmentation_assets
 from src.segmentation import cluster_summary, predict_customer_segment, prepare_customer_data
 
-st.set_page_config(page_title="Customer Segmentation", page_icon="🧠", layout="wide")
 show_sidebar()
 
 st.title("🧠 Customer Segmentation")

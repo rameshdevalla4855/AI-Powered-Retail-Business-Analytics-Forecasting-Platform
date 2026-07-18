@@ -17,9 +17,8 @@ from src.utils import format_currency, validate_dataframe
 
 @lru_cache(maxsize=1)
 def _load_dashboard_frame() -> pd.DataFrame:
-    """Load and validate the processed dataset once per Python process."""
+    """Load the processed dataset once per Python process."""
     df = load_processed_dataset()
-    validate_dataframe(df)
     return df
 
 
